@@ -17,3 +17,12 @@ sam deploy --template-file packaged.yaml --stack-name learn-vpc2 --capabilities 
 ###Deploy
 sam package --template-file vpc-natgateway.yaml --output-template-file packaged.yaml --s3-bucket shalabi-sam
 sam deploy --template-file packaged.yaml --stack-name learn-vpc-natgateway --capabilities CAPABILITY_IAM
+
+
+##Cloud guru udemy course for architects
+https://www.udemy.com/aws-certified-solutions-architect-associate/learn/v4/t/lecture/2801686?start=0
+
+###Deploy
+sam package --template-file cloud-guru-vpc.yaml --output-template-file packaged.yaml --s3-bucket shalabi-sam
+sam deploy --template-file packaged.yaml --stack-name learn-cloud-guru-vpc --capabilities CAPABILITY_IAM
+

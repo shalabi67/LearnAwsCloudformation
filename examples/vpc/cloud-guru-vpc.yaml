@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This is the vpc implementation from cloudguru course
+  https://www.udemy.com/aws-certified-solutions-architect-associate/learn/v4/t/lecture/2801686?start=0
+
+Resources:
+  #1- create VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: acloudguruVpc
+
+  #2- create public subnet with auto assign public ip
+  PublicSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        CidrBlock: 10.0.1.0/24
+        MapPublicIpOnLaunch: true
+        AvailabilityZone: !Select
+          - '0'
+          - !GetAZs ''
+        Tags:
+          - Key: Name
+            Value: Public-10.0.1.0-acloudguruVpc
+
+
+  #3- craete private subnet
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select
+        - '1'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private-10.0.2.0-acloudguruVpc
+
+
+  #4- create internet gateway and attache it to VPC
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: Lab-Internet-Gateway-vpc-nat
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  #5 create public route table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public-Route-Table-acloudguruVpc
+
+  #6- enable internet access to Public Route table.
+  PublicRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref PublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref InternetGateway
+
+  #7- associate public subnet to public route table.
+  PublicSubnetRouteTableAssociation1:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PublicSubnet1
+        RouteTableId: !Ref PublicRouteTable
+
+  #8- create public security group
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access via user defined port
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+
+  #9- create private security group
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access via user defined port
+      SecurityGroupIngress:
+      - CidrIp: !GetAtt VPC.CidrBlock
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - CidrIp: !GetAtt VPC.CidrBlock
+        FromPort: -1
+        IpProtocol: icmp
+        ToPort: -1
+
+  #10- create nat gateway to allow private subnet access to out to internet
+  NATGateway1EIP:
+      Type: AWS::EC2::EIP
+      Properties:
+        Domain: vpc
+  NATGateway1:
+    Type: AWS::EC2::NatGateway
+    DependsOn: AttachGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - NATGateway1EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: NAT-gateway-eip-vpc-nat
+
+
+  #11- create private route table
+  PrivateRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref VPC
+        Tags:
+        - Key: Name
+          Value: Private-Route-Table-vpc-nat
+
+  #12- link Nat gateway with private route table
+  PrivateRouteTableNatGatewayRule:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: PrivateRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+          Ref: NATGateway1
+  PrivateSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
