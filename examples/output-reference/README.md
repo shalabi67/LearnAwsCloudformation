@@ -1,4 +1,4 @@
-#This provides examples on how to references outputs of othr cloud formation template.
+#This provides examples on how to references outputs of another cloud formation template.
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html
 
 ##Example1
