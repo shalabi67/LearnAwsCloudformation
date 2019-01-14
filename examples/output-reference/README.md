@@ -2,6 +2,9 @@
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html
 
 ##Example1
+This example has two templates. the first one creates VPC and exposes a set of outputes, 
+while the second one imports these outputs to create an EC2 instance.
+
 this is from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html
 
 ###Deploy
